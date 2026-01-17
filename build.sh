@@ -66,15 +66,62 @@ echo "[build] Building Tauri bundles ..."
 echo "[build] Note: during DMG bundling a temporary mounted volume may appear; don't drag/copy from it until the build finishes."
 cd "${ROOT_DIR}/backend"
 
-if [[ "$(uname)" == "Darwin" && "${NOTARIZE_TAURI_APP}" != "1" ]]; then
-  # Prevent Tauri from attempting .app notarization when we're not doing it.
-  unset APPLE_ID APPLE_PASSWORD APPLE_TEAM_ID APPLE_API_KEY APPLE_API_ISSUER APPLE_API_KEY_PATH
-fi
+# Linux: Build deb/rpm with Tauri, then manually build AppImage (workaround for linuxdeploy plugin issue)
+if [[ "$(uname)" == "Linux" ]]; then
+  echo "[build] Building deb and rpm bundles..."
+  if command -v tauri >/dev/null 2>&1; then
+    tauri build --bundles deb,rpm "$@"
+  else
+    cargo tauri build --bundles deb,rpm "$@"
+  fi
 
-if command -v tauri >/dev/null 2>&1; then
-  tauri build "$@"
+  echo ""
+  echo "[build] Building AppImage manually (linuxdeploy workaround)..."
+  TAURI_CACHE="${HOME}/.cache/tauri"
+  APPDIR="${ROOT_DIR}/backend/target/release/bundle/appimage/Whitehack Tools.AppDir"
+  APPIMAGE_OUT="${ROOT_DIR}/backend/target/release/bundle/appimage"
+
+  # Ensure linuxdeploy tools are available
+  if [[ ! -f "${TAURI_CACHE}/linuxdeploy-x86_64.AppImage" ]]; then
+    echo "[build] ERROR: linuxdeploy not found in ${TAURI_CACHE}"
+    echo "[build] Run 'cargo tauri build' once to download it, or download manually."
+    exit 1
+  fi
+
+  # Extract linuxdeploy if not already done
+  LINUXDEPLOY_DIR="${TAURI_CACHE}/linuxdeploy-extracted"
+  if [[ ! -d "${LINUXDEPLOY_DIR}" ]]; then
+    echo "[build] Extracting linuxdeploy..."
+    (cd "${TAURI_CACHE}" && ./linuxdeploy-x86_64.AppImage --appimage-extract && mv squashfs-root linuxdeploy-extracted)
+  fi
+
+  # Copy GTK plugin into extracted linuxdeploy
+  if [[ -f "${TAURI_CACHE}/linuxdeploy-plugin-gtk.sh" && ! -f "${LINUXDEPLOY_DIR}/usr/bin/linuxdeploy-plugin-gtk.sh" ]]; then
+    cp "${TAURI_CACHE}/linuxdeploy-plugin-gtk.sh" "${LINUXDEPLOY_DIR}/usr/bin/"
+    chmod +x "${LINUXDEPLOY_DIR}/usr/bin/linuxdeploy-plugin-gtk.sh"
+  fi
+
+  # Build AppImage
+  mkdir -p "${APPIMAGE_OUT}"
+  cd "${APPIMAGE_OUT}"
+  PATH="${LINUXDEPLOY_DIR}/usr/bin:${PATH}" "${LINUXDEPLOY_DIR}/usr/bin/linuxdeploy" \
+    --appdir "${APPDIR}" \
+    --plugin gtk \
+    --output appimage
+
+  echo "[build] ✅ AppImage built successfully!"
 else
-  cargo tauri build "$@"
+  # macOS or other: use Tauri's bundler directly
+  if [[ "$(uname)" == "Darwin" && "${NOTARIZE_TAURI_APP}" != "1" ]]; then
+    # Prevent Tauri from attempting .app notarization when we're not doing it.
+    unset APPLE_ID APPLE_PASSWORD APPLE_TEAM_ID APPLE_API_KEY APPLE_API_ISSUER APPLE_API_KEY_PATH
+  fi
+
+  if command -v tauri >/dev/null 2>&1; then
+    tauri build "$@"
+  else
+    cargo tauri build "$@"
+  fi
 fi
 
 # macOS: Notarize and staple the DMG (optional)
