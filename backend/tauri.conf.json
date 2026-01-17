@@ -1,7 +1,7 @@
 {
-  "productName": "Tauri SvelteKit Boilerplate",
+  "productName": "Whitehack Tools",
   "version": "0.0.1",
-  "identifier": "com.tauri.sveltekit.boilerplate",
+  "identifier": "com.whitehack.tools",
   "build": {
     "frontendDist": "../frontend/build",
     "devUrl": "http://localhost:5173"
@@ -9,7 +9,7 @@
   "app": {
     "windows": [
       {
-        "title": "Tauri SvelteKit Boilerplate",
+        "title": "Whitehack Tools",
         "width": 1200,
         "height": 800,
         "minWidth": 800,

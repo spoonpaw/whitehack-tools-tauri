@@ -1,206 +1,126 @@
-# Tauri + SvelteKit + Tailwind CSS Boilerplate
+# Whitehack Tools for Windows/macOS/Linux
 
-A modern, production-ready boilerplate for building cross-platform desktop applications with Tauri, SvelteKit, and Tailwind CSS.
+A cross-platform desktop application for managing characters in the Whitehack tabletop role-playing game. Built with Tauri v2 + SvelteKit, this app provides a modern and intuitive interface for creating, managing, and sharing Whitehack characters.
 
-## ✨ Features
+## Features
 
-- 🦀 **Tauri v2** - Secure, fast, and lightweight Rust backend
-- ⚡ **SvelteKit** - Modern web framework with SSG support  
-- 🎨 **Tailwind CSS** - Utility-first CSS with dark mode
-- 🌙 **Dark Mode** - Persistent theme switching
-- 📱 **Responsive Design** - Mobile-first approach
-- 🔧 **TypeScript** - Full type safety
-- 🚀 **Hot Reload** - Fast development experience
-- 📦 **Optimized Build** - Small bundle size
-- 🧪 **Test Suite** - Complete testing interface included
+- **Cross-Platform**: Runs on Windows, macOS, and Linux
+- **Character Management**:
+  - Create and edit character sheets
+  - Track attributes, groups, equipment, and more
+  - Import/Export character data (JSON format)
+  - Cross-platform import from Swift (iOS/macOS) and Kotlin (Android) versions
+  - Manage multiple characters with bulk operations
+- **Modern Interface**:
+  - Clean, intuitive SvelteKit + Tailwind design
+  - Dark/Light mode support
+  - Responsive layout
+- **Character Features**:
+  - Track character attributes (standard or custom)
+  - Manage character groups (Species, Vocation, Affiliation)
+  - Equipment and encumbrance tracking with detailed breakdowns
+  - Combat stats and weapons
+  - Full support for all character classes:
+    - **Strong** - Combat options and conflict looting
+    - **Deft** - Attunement slots and daily powers
+    - **Wise** - Miracle slots and magic items
+    - **Brave** - Quirks and comeback dice
+    - **Clever** - Knacks and unorthodox solutions
+    - **Fortunate** - Luck, standing, retainers, and signature objects
+  - Gold and inventory management
 
-## 📂 Project Structure
+## Requirements
 
-```
-├── frontend/                 # SvelteKit application
-│   ├── src/
-│   │   ├── routes/          # SvelteKit routes
-│   │   ├── lib/             # Shared utilities
-│   │   └── components/      # Reusable components
-│   ├── static/              # Static assets
-│   └── package.json
-├── backend/                  # Tauri application
-│   ├── src/
-│   │   └── main.rs         # Rust commands and logic
-│   ├── Cargo.toml
-│   └── tauri.conf.json     # Tauri configuration
-└── dev.bat                  # Development script
-```
+- [Node.js](https://nodejs.org/) v18 or higher
+- [Rust](https://rustup.rs/) (latest stable)
+- Platform-specific requirements:
+  - **Windows**: WebView2 (usually pre-installed on Windows 10/11)
+  - **macOS**: Xcode Command Line Tools
+  - **Linux**: webkit2gtk, libappindicator
 
-## 🚀 Quick Start
+## Installation
 
-### Prerequisites
-
-- [Node.js](https://nodejs.org/) (v18 or higher)
-- [Rust](https://rustup.rs/)
-- [Tauri Prerequisites](https://tauri.app/v1/guides/getting-started/prerequisites)
-
-### Installation
-
-1. **Install dependencies**
-
+1. Clone the repository
+2. Run the setup script:
    ```bash
-./setup.sh
+   ./setup.sh      # macOS/Linux
+   # or
+   ./setup.ps1     # Windows
    ```
 
-### Development
+## Development
 
-**Using the dev script (recommended):**
-```bash
-dev.bat
-```
-
-**macOS / Linux:**
-```bash
-./dev.sh
-```
-
-### Build (macOS / Linux)
+Start the development server:
 
 ```bash
-./build.sh
+./dev.sh          # macOS/Linux
+# or
+./dev.bat         # Windows
 ```
 
-Outputs (macOS) will be under `backend/target/release/bundle/` (e.g. `.app`, `.dmg`).
+This starts both the SvelteKit frontend and Tauri backend with hot reload.
 
-**Or manually:**
-```bash
-# Terminal 1 - Start frontend dev server
-cd frontend
-npm run dev
+## Building
 
-# Terminal 2 - Start Tauri app
-cd backend
-tauri dev
-```
-
-### Building for Production
+Build the production app:
 
 ```bash
-cd backend
-cargo tauri build
+./build.sh        # macOS/Linux
+# or
+./build.ps1       # Windows
 ```
 
-The built application will be available in `backend/target/release/bundle/`.
+Built applications are output to `backend/target/release/bundle/`:
+- **Windows**: `.msi` installer, `.exe` executable
+- **macOS**: `.dmg` disk image, `.app` bundle
+- **Linux**: `.deb` package, `.AppImage`
 
-## 🔧 Available Scripts
+## Project Structure
 
-**Frontend (`frontend/` directory):**
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm run preview` - Preview production build
-
-**Backend (`backend/` directory):**
-- `cargo tauri dev` - Start development with hot reload
-- `cargo tauri build` - Build production executable
-
-## 🧪 Testing
-
-The boilerplate includes a comprehensive test suite accessible at `/test` route:
-
-- **Basic Operations** - Function calls, math operations, greetings
-- **System Integration** - OS information, file operations
-- **Performance Tests** - Memory usage, async operations, network simulation
-- **Error Handling** - Proper error management testing
-
-## 📖 API Reference
-
-### Rust Commands
-
-The following Tauri commands are available from the frontend:
-
-```typescript
-import { invoke } from '@tauri-apps/api/core';
-
-// Get system information
-const systemInfo = await invoke('get_system_info');
-
-// Perform basic operations
-const result = await invoke('test_basic_operation');
-
-// Math operations
-const sum = await invoke('test_math_operation', { a: 5, b: 3 });
-
-// File operations
-const fileResult = await invoke('test_file_operations');
-
-// JSON parsing
-const parsed = await invoke('test_json_parsing', { jsonStr: '{"key": "value"}' });
+```
+whitehack-tools-tauri/
+├── frontend/               # SvelteKit application
+│   ├── src/
+│   │   ├── routes/        # Pages and layouts
+│   │   ├── lib/
+│   │   │   ├── components/  # UI components
+│   │   │   ├── models/      # TypeScript types
+│   │   │   ├── stores/      # Svelte stores
+│   │   │   ├── utils/       # Utilities
+│   │   │   └── data/        # Preset data
+│   │   └── app.css        # Global styles
+│   └── package.json
+├── backend/               # Tauri/Rust application
+│   ├── src/
+│   │   └── main.rs       # Rust entry point
+│   ├── icons/            # App icons
+│   └── tauri.conf.json   # Tauri configuration
+├── dev.sh / dev.bat      # Development scripts
+├── build.sh / build.ps1  # Build scripts
+└── DEVELOPMENT_PLAN.md   # Detailed implementation plan
 ```
 
-## 🎨 Customization
+## Cross-Platform Compatibility
 
-### Tailwind Configuration
+This app can import and export character data compatible with:
+- **Whitehack Tools for iOS/macOS** (Swift version)
+- **Whitehack Tools for Android** (Kotlin version)
 
-Modify `frontend/tailwind.config.js` to customize your design system:
+The import system automatically detects and normalizes data from either platform.
 
-```javascript
-theme: {
-  extend: {
-    colors: {
-      primary: {
-        50: '#eff6ff',
-        500: '#3b82f6',
-        600: '#2563eb',
-        700: '#1d4ed8'
-      }
-    }
-  }
-}
-```
+## Contributing
 
-### Tauri Configuration
+Contributions are welcome! Please feel free to submit a Pull Request.
 
-Edit `backend/tauri.conf.json` to:
-- Change app name and identifier
-- Modify window properties
-- Configure app icons
-- Set up permissions
+## License
 
-## 🔒 Security
+This project is available under the MIT license. See the LICENSE file for more info.
 
-- Tauri's security features are enabled by default
-- Only explicitly defined commands are exposed to the frontend
-- CSP (Content Security Policy) ready
-- Secure communication between Rust and frontend
+## Acknowledgments
 
-## 📦 Distribution
-
-### Windows
-- `.msi` installer
-- `.exe` executable
-
-### macOS
-- `.dmg` disk image
-- `.app` application bundle
-
-### Linux
-- `.deb` package
-- `.AppImage` portable app
-
-## 🤝 Contributing
-
-1. Fork the project
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- [Tauri](https://tauri.app/) - Desktop app framework
-- [SvelteKit](https://kit.svelte.dev/) - Web application framework
-- [Tailwind CSS](https://tailwindcss.com/) - CSS framework
+- Built for use with the Whitehack role-playing game
+- Uses [Phosphor Icons](https://phosphoricons.com/) via phosphor-svelte
+- Built with [Tauri](https://tauri.app/), [SvelteKit](https://kit.svelte.dev/), and [Tailwind CSS](https://tailwindcss.com/)
 
 ---
-
-**Ready to build amazing desktop applications! 🚀**
+*Note: This app is a fan-made tool and is not officially affiliated with Whitehack or its creators.*

@@ -1,0 +1,85 @@
+/**
+ * gear.ts - Preset gear data from Whitehack rules
+ */
+
+import type { WeightCategory } from '$lib/models';
+
+export interface PresetGear {
+  name: string;
+  weight: WeightCategory;
+  special: string;
+  isContainer: boolean;
+}
+
+export const PRESET_GEAR: PresetGear[] = [
+  { name: 'Arrow', weight: 'No Size', special: '', isContainer: false },
+  { name: 'Bandage', weight: 'No Size', special: '', isContainer: false },
+  { name: 'Blessed/Cursed water', weight: 'Minor', special: '', isContainer: false },
+  { name: 'Bolt', weight: 'No Size', special: '', isContainer: false },
+  { name: 'Boot', weight: 'Minor', special: '', isContainer: false },
+  { name: 'Bottle (wine or beer)', weight: 'Minor', special: '', isContainer: false },
+  { name: 'Cart', weight: 'Heavy', special: '', isContainer: false },
+  { name: 'Carpeting tool', weight: 'Minor', special: '', isContainer: false },
+  { name: 'Case (map or scroll)', weight: 'Minor', special: '', isContainer: false },
+  { name: 'Checkers (game)', weight: 'No Size', special: '', isContainer: false },
+  { name: 'Climbing gear', weight: 'Regular', special: '', isContainer: false },
+  { name: 'Cloth (fine)', weight: 'Minor', special: '', isContainer: false },
+  { name: 'Cloth (standard)', weight: 'Minor', special: '', isContainer: false },
+  { name: 'Compass', weight: 'No Size', special: '', isContainer: false },
+  { name: 'Crowbar', weight: 'Minor', special: '', isContainer: false },
+  { name: 'Cult token (fine)', weight: 'No Size', special: '', isContainer: false },
+  { name: 'Cult token (simple)', weight: 'No Size', special: '', isContainer: false },
+  { name: 'Dice (bone)', weight: 'No Size', special: '', isContainer: false },
+  { name: 'Dog', weight: 'Heavy', special: '', isContainer: false },
+  { name: 'Flatboat', weight: 'Heavy', special: '', isContainer: false },
+  { name: 'Flint & steel', weight: 'Minor', special: '', isContainer: false },
+  { name: 'Grapnel', weight: 'Regular', special: '', isContainer: false },
+  { name: 'Hammer & Wooden stakes', weight: 'Minor', special: '', isContainer: false },
+  { name: 'Hatchet', weight: 'Minor', special: '', isContainer: false },
+  { name: 'Holy symbol (silver)', weight: 'Minor', special: '', isContainer: false },
+  { name: 'Holy symbol (wooden)', weight: 'Minor', special: '', isContainer: false },
+  { name: 'Holy water (small vial)', weight: 'Minor', special: '', isContainer: false },
+  { name: 'Horse (battle trained)', weight: 'Heavy', special: '', isContainer: false },
+  { name: 'Horse (riding)', weight: 'Heavy', special: '', isContainer: false },
+  { name: 'Knapsack', weight: 'Minor', special: '', isContainer: true },
+  { name: 'Lab (portable)', weight: 'Heavy', special: '', isContainer: false },
+  { name: 'Lamp', weight: 'Minor', special: '', isContainer: false },
+  { name: 'Lamp oil', weight: 'Minor', special: '', isContainer: false },
+  { name: 'Lockpick', weight: 'No Size', special: '', isContainer: false },
+  { name: 'Makeup', weight: 'No Size', special: '', isContainer: false },
+  { name: 'Map (regular area)', weight: 'No Size', special: '', isContainer: false },
+  { name: 'Match', weight: 'No Size', special: '', isContainer: false },
+  { name: 'Mirror (glass)', weight: 'Minor', special: '', isContainer: false },
+  { name: 'Mule', weight: 'Heavy', special: '', isContainer: false },
+  { name: 'Parchment tube', weight: 'Minor', special: '', isContainer: false },
+  { name: 'Perfume', weight: 'Minor', special: '', isContainer: false },
+  { name: 'Pole, 10 ft', weight: 'Regular', special: '', isContainer: false },
+  { name: 'Prybar', weight: 'Minor', special: '', isContainer: false },
+  { name: 'Quiver', weight: 'Minor', special: '', isContainer: false },
+  { name: 'Raft', weight: 'Heavy', special: '', isContainer: false },
+  { name: 'Ration (day)', weight: 'Minor', special: '', isContainer: false },
+  { name: 'Rope, elven', weight: 'Minor', special: '', isContainer: false },
+  { name: 'Rope, regular', weight: 'Regular', special: '', isContainer: false },
+  { name: 'Sack', weight: 'Minor', special: '', isContainer: true },
+  { name: 'Saddle', weight: 'Regular', special: '', isContainer: false },
+  { name: 'Saddle bags', weight: 'Minor', special: '', isContainer: true },
+  { name: 'Scroll (blank)', weight: 'No Size', special: '', isContainer: false },
+  { name: 'Shovel', weight: 'Minor', special: '', isContainer: false },
+  { name: 'Shevvak', weight: 'Regular', special: '', isContainer: false },
+  { name: 'Skiing gear', weight: 'Regular', special: '', isContainer: false },
+  { name: 'Sled', weight: 'Heavy', special: '', isContainer: false },
+  { name: 'Sleeping bag', weight: 'Regular', special: '', isContainer: false },
+  { name: 'Snare', weight: 'Minor', special: '', isContainer: false },
+  { name: 'Snow Monkey', weight: 'Heavy', special: '', isContainer: false },
+  { name: 'Spike, iron', weight: 'Minor', special: '', isContainer: false },
+  { name: 'Spell book (blank)', weight: 'Regular', special: '', isContainer: false },
+  { name: 'Stick (long)', weight: 'Regular', special: '', isContainer: false },
+  { name: 'Tent', weight: 'Heavy', special: '', isContainer: false },
+  { name: 'Tinderbox', weight: 'Minor', special: '', isContainer: false },
+  { name: 'Torch', weight: 'Minor', special: '', isContainer: false },
+  { name: 'Warm coat', weight: 'Regular', special: '', isContainer: false },
+  { name: 'Water container', weight: 'Minor', special: '', isContainer: false },
+  { name: 'Wolvesbane & Garlic', weight: 'Minor', special: '', isContainer: false },
+  { name: 'Zoruk (battle)', weight: 'Heavy', special: '', isContainer: false },
+  { name: 'Zoruk (riding)', weight: 'Heavy', special: '', isContainer: false }
+];

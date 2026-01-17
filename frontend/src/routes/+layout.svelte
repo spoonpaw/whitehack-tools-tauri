@@ -1,105 +1,103 @@
 <script lang="ts">
   import '../app.css';
-  import { page } from '$app/stores';
-  import { onNavigate } from '$app/navigation';
   import { onMount, type Snippet } from 'svelte';
+  import { initDatabase, getSetting, setSetting } from '$lib/stores/database';
+  import { loadCharacters } from '$lib/stores/characters.svelte';
+  import { initTheme, getTheme, toggleTheme } from '$lib/stores/ui.svelte';
 
   let { children }: { children: Snippet } = $props();
 
-  const isHomePage = $derived($page.url.pathname === '/');
+  // App initialization state
+  let isInitialized = $state(false);
+  let initError = $state<string | null>(null);
 
-  // Enable view transitions for smooth page navigation
-  onNavigate((navigation) => {
-    // @ts-ignore - startViewTransition is not yet in all TS libs
-    if (!document.startViewTransition) return;
+  // Get theme state
+  const isDark = $derived(getTheme() === 'dark');
 
-    return new Promise((resolve) => {
-      // @ts-ignore
-      document.startViewTransition(async () => {
-        resolve();
-        await navigation.complete;
-      });
-    });
-  });
+  onMount(async () => {
+    try {
+      // Initialize database
+      await initDatabase();
 
-  // Theme state
-  let isDark = $state(true);
+      // Load saved theme
+      const savedTheme = await getSetting('theme');
+      initTheme(savedTheme ?? 'dark');
 
-  function toggleTheme() {
-    isDark = !isDark;
-    document.documentElement.classList.toggle('dark', isDark);
-    document.documentElement.classList.toggle('light', !isDark);
-    localStorage.setItem('theme', isDark ? 'dark' : 'light');
-  }
+      // Load characters
+      await loadCharacters();
 
-  onMount(() => {
-    // Load saved theme preference
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme === 'light') {
-      isDark = false;
-      document.documentElement.classList.remove('dark');
-      document.documentElement.classList.add('light');
-    } else {
-      document.documentElement.classList.add('dark');
+      isInitialized = true;
+      console.log('[App] Initialized successfully');
+    } catch (e) {
+      initError = e instanceof Error ? e.message : 'Failed to initialize app';
+      console.error('[App] Init error:', e);
+      // Still show the app even if there's an error
+      isInitialized = true;
     }
   });
+
+  async function handleToggleTheme() {
+    toggleTheme();
+    // Save theme preference
+    try {
+      await setSetting('theme', getTheme());
+    } catch (e) {
+      console.error('[App] Failed to save theme:', e);
+    }
+  }
 </script>
 
 <div class="min-h-screen">
-  <!-- Sticky Navbar -->
-  <nav class="sticky top-0 z-40 border-b border-neutral-800 bg-neutral-900/95 backdrop-blur">
-    <div class="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
-      <a href="/" class="text-lg font-semibold text-neutral-100 transition hover:text-cyan-400">
-        Tauri + SvelteKit
-      </a>
-      <div class="flex items-center gap-4">
-        {#if !isHomePage}
-          <a
-            href="/"
-            class="text-neutral-400 transition hover:text-white"
-            title="Home"
-            aria-label="Home"
-          >
-            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-            </svg>
-          </a>
-        {/if}
-        <a
-          href="/test"
-          class="text-neutral-400 transition hover:text-white"
-          title="Test Suite"
-          aria-label="Test Suite"
-        >
-          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-          </svg>
-        </a>
-        <!-- Theme Toggle -->
-        <button
-          type="button"
-          onclick={toggleTheme}
-          class="text-neutral-400 transition hover:text-white"
-          title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-          aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-        >
-          {#if isDark}
-            <!-- Sun icon -->
-            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-            </svg>
-          {:else}
-            <!-- Moon icon -->
-            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-            </svg>
-          {/if}
-        </button>
+  {#if !isInitialized}
+    <!-- Loading state -->
+    <div class="flex h-screen items-center justify-center">
+      <div class="text-center">
+        <div class="mb-4 h-8 w-8 animate-spin rounded-full border-2 border-cyan-400 border-t-transparent mx-auto"></div>
+        <p class="text-neutral-400">Loading Whitehack Tools...</p>
       </div>
     </div>
-  </nav>
+  {:else}
+    <!-- Header -->
+    <header class="sticky top-0 z-40 border-b border-neutral-800 bg-neutral-900/95 backdrop-blur">
+      <div class="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
+        <h1 class="text-lg font-bold text-neutral-100">
+          Whitehack Tools
+        </h1>
+        <div class="flex items-center gap-3">
+          <!-- Theme Toggle -->
+          <button
+            type="button"
+            onclick={handleToggleTheme}
+            class="rounded-lg p-2 text-neutral-400 transition hover:bg-neutral-800 hover:text-white"
+            title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+            aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+          >
+            {#if isDark}
+              <!-- Sun icon -->
+              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+              </svg>
+            {:else}
+              <!-- Moon icon -->
+              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+              </svg>
+            {/if}
+          </button>
+        </div>
+      </div>
+    </header>
 
-  <main style="view-transition-name: main-content;">
-    {@render children()}
-  </main>
+    <!-- Error banner -->
+    {#if initError}
+      <div class="bg-red-900/50 border-b border-red-800 px-4 py-2 text-center text-red-200 text-sm">
+        {initError}
+      </div>
+    {/if}
+
+    <!-- Main content -->
+    <main>
+      {@render children()}
+    </main>
+  {/if}
 </div>

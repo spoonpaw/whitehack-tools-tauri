@@ -1,130 +1,223 @@
 <script lang="ts">
-  import { invoke } from '@tauri-apps/api/core';
   import { onMount } from 'svelte';
+  import { goto } from '$app/navigation';
+  import type { PlayerCharacter } from '$lib/models';
+  import { createDefaultCharacter } from '$lib/models';
+  import { CharacterList, CharacterListHeader, ExportModal, ImportModal, ConfirmDialog } from '$lib/components';
+  import { characterStore } from '$lib/stores';
 
-  let systemInfo: any = $state(null);
-  let isLoading = $state(false);
-  let error = $state('');
+  let characters = $state<PlayerCharacter[]>([]);
+  let isLoading = $state(true);
+  let characterToDelete = $state<PlayerCharacter | null>(null);
+  let showDeleteConfirm = $state(false);
+  let showExportModal = $state(false);
+  let showImportModal = $state(false);
+  
+  // Multi-select state
+  let selectMode = $state(false);
+  let selectedIds = $state<Set<string>>(new Set());
+  let showBulkDeleteConfirm = $state(false);
 
-  async function fetchSystemInfo() {
+  const selectedCount = $derived(selectedIds.size);
+
+  onMount(async () => {
     try {
-      isLoading = true;
-      error = '';
-      systemInfo = await invoke('get_system_info');
+      await characterStore.loadCharacters();
+      characters = characterStore.characters;
     } catch (err) {
-      error = `Error: ${err}`;
-      console.error('Error invoking get_system_info:', err);
+      console.error('Failed to load characters:', err);
     } finally {
       isLoading = false;
     }
+  });
+
+  // Keep characters in sync with store
+  $effect(() => {
+    characters = characterStore.characters;
+  });
+
+  async function handleCreateCharacter() {
+    // Navigate to new character form - don't save to DB yet
+    goto('/character/new/edit');
   }
 
-  onMount(() => {
-    fetchSystemInfo();
-  });
+  function handleSelectCharacter(character: PlayerCharacter) {
+    goto(`/character/${character.id}`);
+  }
+
+  function handleDeleteRequest(character: PlayerCharacter) {
+    characterToDelete = character;
+    showDeleteConfirm = true;
+  }
+
+  async function handleConfirmDelete() {
+    if (characterToDelete) {
+      await characterStore.deleteCharacter(characterToDelete.id);
+      characterToDelete = null;
+    }
+    showDeleteConfirm = false;
+  }
+
+  function handleCancelDelete() {
+    characterToDelete = null;
+    showDeleteConfirm = false;
+  }
+
+  function handleOpenImport() {
+    showImportModal = true;
+  }
+
+  async function handleImportCharacters(importedCharacters: PlayerCharacter[]) {
+    for (const char of importedCharacters) {
+      // Generate new ID to avoid conflicts
+      const newChar = { ...char, id: crypto.randomUUID() };
+      await characterStore.addCharacter(newChar);
+    }
+  }
+
+  function handleOpenExport() {
+    showExportModal = true;
+  }
+
+  async function handleExport(selectedCharacters: PlayerCharacter[]) {
+    try {
+      const { exportToFile, downloadCharactersAsFile } = await import('$lib/utils');
+      
+      // Try Tauri file dialog first, fall back to browser download
+      const success = await exportToFile(selectedCharacters);
+      if (!success) {
+        // Fallback to browser download
+        downloadCharactersAsFile(selectedCharacters);
+      }
+    } catch (err) {
+      // If Tauri not available, use browser download
+      const { downloadCharactersAsFile } = await import('$lib/utils');
+      downloadCharactersAsFile(selectedCharacters);
+    }
+  }
+
+  // Multi-select handlers
+  function handleToggleSelectMode() {
+    selectMode = !selectMode;
+    if (!selectMode) {
+      selectedIds = new Set();
+    }
+  }
+
+  function handleSelectionChange(id: string, selected: boolean) {
+    const newSet = new Set(selectedIds);
+    if (selected) {
+      newSet.add(id);
+    } else {
+      newSet.delete(id);
+    }
+    selectedIds = newSet;
+  }
+
+  function handleSelectAll() {
+    selectedIds = new Set(characters.map(c => c.id));
+  }
+
+  function handleDeselectAll() {
+    selectedIds = new Set();
+  }
+
+  function handleDeleteSelectedRequest() {
+    if (selectedIds.size > 0) {
+      showBulkDeleteConfirm = true;
+    }
+  }
+
+  async function handleConfirmBulkDelete() {
+    for (const id of selectedIds) {
+      await characterStore.deleteCharacter(id);
+    }
+    selectedIds = new Set();
+    selectMode = false;
+    showBulkDeleteConfirm = false;
+  }
+
+  function handleCancelBulkDelete() {
+    showBulkDeleteConfirm = false;
+  }
 </script>
 
 <svelte:head>
-  <title>Tauri + SvelteKit Boilerplate</title>
+  <title>Whitehack Tools</title>
 </svelte:head>
 
-<div class="mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-8">
-  <!-- Hero -->
-  <div class="text-center mb-12">
-    <h1 class="text-5xl font-bold text-neutral-100 mb-4">
-      Tauri + SvelteKit + Tailwind
-    </h1>
-    <p class="text-xl text-neutral-400">
-      Production-ready boilerplate with Rust ↔ Frontend communication
-    </p>
-  </div>
+<div class="min-h-screen">
+  <CharacterListHeader
+    characterCount={characters.length}
+    oncreate={handleCreateCharacter}
+    onimport={handleOpenImport}
+    onexport={handleOpenExport}
+    {selectMode}
+    {selectedCount}
+    ontoggleselect={handleToggleSelectMode}
+    ondeleteselected={handleDeleteSelectedRequest}
+    onselectall={handleSelectAll}
+    ondeselectall={handleDeselectAll}
+  />
 
-  <!-- Feature Cards -->
-  <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
-    <!-- System Info Card -->
-    <div class="rounded-xl border border-neutral-700 bg-neutral-800/50 p-6">
-      <h2 class="text-xl font-semibold text-neutral-100 mb-4 flex items-center gap-2">
-        <span class="text-cyan-400">🖥️</span> System Information
-      </h2>
-      
-      <button
-        onclick={fetchSystemInfo}
-        disabled={isLoading}
-        class="w-full bg-cyan-600 hover:bg-cyan-500 disabled:opacity-50 text-white font-medium py-2.5 px-4 rounded-lg transition-colors duration-200 mb-4"
-      >
-        {isLoading ? 'Loading...' : 'Refresh System Info'}
-      </button>
-
-      {#if error}
-        <div class="p-3 bg-red-900/30 border border-red-700 text-red-400 rounded-lg text-sm">
-          {error}
+  <main class="mx-auto max-w-4xl px-6 py-6">
+    {#if isLoading}
+      <div class="flex items-center justify-center py-20">
+        <div class="flex flex-col items-center gap-4">
+          <svg class="h-8 w-8 animate-spin text-cyan-500" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <p class="text-neutral-500">Loading characters...</p>
         </div>
-      {/if}
+      </div>
+    {:else}
+      <CharacterList
+        {characters}
+        onselect={handleSelectCharacter}
+        ondelete={handleDeleteRequest}
+        oncreate={handleCreateCharacter}
+        selectable={selectMode}
+        {selectedIds}
+        onselectionchange={handleSelectionChange}
+      />
+    {/if}
+  </main>
 
-      {#if systemInfo}
-        <div class="space-y-2">
-          <div class="flex justify-between items-center p-3 bg-neutral-700/50 rounded-lg">
-            <span class="text-neutral-400">OS</span>
-            <span class="text-neutral-100 font-medium">{systemInfo.os}</span>
-          </div>
-          <div class="flex justify-between items-center p-3 bg-neutral-700/50 rounded-lg">
-            <span class="text-neutral-400">Architecture</span>
-            <span class="text-neutral-100 font-medium">{systemInfo.arch}</span>
-          </div>
-          <div class="flex justify-between items-center p-3 bg-neutral-700/50 rounded-lg">
-            <span class="text-neutral-400">Version</span>
-            <span class="text-neutral-100 font-medium">{systemInfo.version}</span>
-          </div>
-        </div>
-      {/if}
-    </div>
+  <!-- Single character delete confirmation -->
+  <ConfirmDialog
+    open={showDeleteConfirm}
+    title="Delete Character"
+    message={characterToDelete ? `Are you sure you want to delete "${characterToDelete.name}"? This action cannot be undone.` : ''}
+    confirmText="Delete"
+    cancelText="Cancel"
+    variant="danger"
+    onconfirm={handleConfirmDelete}
+    oncancel={handleCancelDelete}
+  />
 
-    <!-- Features Card -->
-    <div class="rounded-xl border border-neutral-700 bg-neutral-800/50 p-6">
-      <h2 class="text-xl font-semibold text-neutral-100 mb-4 flex items-center gap-2">
-        <span class="text-fuchsia-400">✨</span> Features Included
-      </h2>
-      
-      <ul class="space-y-3">
-        <li class="flex items-center gap-3 text-neutral-300">
-          <span class="text-cyan-400">✓</span>
-          <span>View transitions (smooth navigation)</span>
-        </li>
-        <li class="flex items-center gap-3 text-neutral-300">
-          <span class="text-cyan-400">✓</span>
-          <span>Dark/Light mode with persistence</span>
-        </li>
-        <li class="flex items-center gap-3 text-neutral-300">
-          <span class="text-cyan-400">✓</span>
-          <span>SQLite database plugin</span>
-        </li>
-        <li class="flex items-center gap-3 text-neutral-300">
-          <span class="text-cyan-400">✓</span>
-          <span>Filesystem plugin</span>
-        </li>
-        <li class="flex items-center gap-3 text-neutral-300">
-          <span class="text-cyan-400">✓</span>
-          <span>Rust ↔ Frontend IPC</span>
-        </li>
-        <li class="flex items-center gap-3 text-neutral-300">
-          <span class="text-cyan-400">✓</span>
-          <span>Tailwind CSS configured</span>
-        </li>
-      </ul>
-    </div>
-  </div>
+  <!-- Bulk delete confirmation -->
+  <ConfirmDialog
+    open={showBulkDeleteConfirm}
+    title="Delete Characters"
+    message={`Are you sure you want to delete ${selectedCount} character${selectedCount === 1 ? '' : 's'}? This action cannot be undone.`}
+    confirmText={`Delete ${selectedCount} Character${selectedCount === 1 ? '' : 's'}`}
+    cancelText="Cancel"
+    variant="danger"
+    onconfirm={handleConfirmBulkDelete}
+    oncancel={handleCancelBulkDelete}
+  />
 
-  <!-- CTA -->
-  <div class="text-center">
-    <a 
-      href="/test" 
-      class="inline-flex items-center gap-2 px-6 py-3 bg-fuchsia-600 hover:bg-fuchsia-500 text-white font-semibold rounded-xl transition-colors duration-200"
-    >
-      <span>🔧</span>
-      <span>Open Test Suite</span>
-    </a>
-    <p class="mt-4 text-sm text-neutral-500">
-      Run comprehensive tests for all Tauri plugins and features
-    </p>
-  </div>
+  <ExportModal
+    open={showExportModal}
+    {characters}
+    onclose={() => showExportModal = false}
+    onexport={handleExport}
+  />
+
+  <ImportModal
+    open={showImportModal}
+    onclose={() => showImportModal = false}
+    onimport={handleImportCharacters}
+  />
 </div>
